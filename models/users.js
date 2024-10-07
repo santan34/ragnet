@@ -13,7 +13,7 @@ const userSchema = new mongoClient.client.Schema({
     }
 })
 
-userSchema.pre('save', aysnc function(next) {
+userSchema.pre('save', async function(next) {
     if(!this.isModified(password)) {
         return next()
     }
