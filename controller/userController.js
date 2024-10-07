@@ -1,6 +1,16 @@
 const schema =  require('../utils/joi/schema');
 const mongoClient = require('../utils/mongoClient');
 const User = require('../models/user');
+const jwt = require('jsonwebtoken')
+
+//creates a jwt token based of the userId
+const secret = process.env.JWT_SECRET || 'getishjdty-uc565gtduf-fv';
+const time = process.env.JWT_LIFESPAN || '1h';
+const createToken = (userId) => {
+    return jwt.sign({userId}, secret, {
+        expiresIn: time
+    })
+}
 
 class UserController{
     static async createUser(req, res) {
@@ -53,7 +63,17 @@ class UserController{
                 })
                 return;
             }
-            //create a session for the user
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                res.status(401).json({
+                    error: "Incorect password"
+                })
+            }
+            //create a token for the user
+            const token = createToken(user._id);
+            res.status.(200).json({
+                message : token,
+            })
         } catch (error) {
             res.status(500).json({
                 error: `Internal server error ${error}`;
