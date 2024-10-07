@@ -77,13 +77,13 @@ class UserController{
             }
             //create a token for the user
             const token = createToken(user._id);
-            res.status.(200).json({
+            res.status(200).json({
                 message : 'Login succesfull',
                 token,
             })
         } catch (error) {
             res.status(500).json({
-                error: `Internal server error ${error}`;
+                error: `Internal server error ${error}`,
             })
             return;
         }
@@ -95,37 +95,61 @@ class UserController{
 
     static async deleteUser(req, res) {
         //delete the user from the database
-        const { email, password } = req.body;
-        const toValidate = { email, password };
-        const { error } = schema.validate(toValidate);
-        if (error) {
-            res.status(400).json({
-                error: 'Missing email or password'
-            })
-            return;
-        }
         try {
-            const toBeDeleted = await User.findOne({ email })
-            if (!toBeDeleted) {
-                res.status(404).json({
-                    error : 'User not found'
-                })
-                return;
-            }
-            await User.deleteOne({ email })
+            const userId = req.userId;
+            await User.findByIdAndDelete({ email })
             res.status(200).json({message: 'User deleted succesfully'})
         } catch (error) {
             res.status(500).json({error: `intenal server error ${error}`})
-        }       
-
+        }
+        //delete bots
+        //delet documentd
     }
 
     static async changePassword(req, res) {
         //update the user details
+        try {
+            const userId = req.userId;
+            const { password, confirmPassword } = req.body;
+            if (password !== confirmPassword) {
+                res.status(400).json({
+                    error: 'Passwords do not match'
+                })
+                return;
+            }
+            const user = await User.findById(userId);
+            user.password = password;
+            await user.save();
+            res.status(200).json({
+                message: 'Password changed successfully'
+            })
+        } catch (error) {
+            res.status(500).json({
+                error: `Internal server error ${error}`
+            })
+        }
     }
 
     static async forgotPassword(req, res) {
         //send email reset link to the user
+    }
+
+    static async getUserProfile(res, req) {
+        try{
+            const userId = req.userId;
+            const user = await User.finfById(userId).select('-password');
+            if(!user) {
+                return res.status(404).json({
+                    error: 'User not found'
+                })
+                return;
+            }
+            res.status(200).json(user);
+            //send bot data
+            //send document data
+        } catch (error) {
+            res.status(500).json({error: `Internal server error: ${error}`});
+        }
     }
 }
 module.exports  = UserController;
