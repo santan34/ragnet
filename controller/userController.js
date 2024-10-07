@@ -14,12 +14,18 @@ const createToken = (userId) => {
 
 class UserController{
     static async createUser(req, res) {
-        const { password, email} = req.body;
+        const { password, email ,confirmPassword} = req.body;
         const toValidate = { email, password };
         const { error } = schema.validate(toValidate)
         if (error) {
             res.status(400).json({
-                error: error.detail[0].message
+                error: error.details[0].message
+            })
+            return;
+        }
+        if (password !== confirmPassword) {
+            res.status(400).json({
+                error: 'Passwords do not match'
             })
             return;
         }
@@ -34,8 +40,8 @@ class UserController{
             //verify if the email belongs to a user
             const newUSer = new User({ email, password });
             await newUSer.save();
-            res.send(200).json({
-                message: 'New user created'
+            res.status(200).json({
+                message: 'New user created successfully'
             })
         }catch (error) {
             res.status(500).json({
@@ -52,11 +58,11 @@ class UserController{
             const { error } = schema.validate(toValidate)
             if (error) {
                 res.status(400).json({
-                    error: error.detail[0].message
+                    error: error.details[0].message
                 })
                 return;
             }
-            const user = await User.findOne({ email, password });
+            const user = await User.findOne({ email });
             if (!user) {
                 res.status(400).json({
                     error: 'Invalid email or password'
@@ -72,7 +78,8 @@ class UserController{
             //create a token for the user
             const token = createToken(user._id);
             res.status.(200).json({
-                message : token,
+                message : 'Login succesfull',
+                token,
             })
         } catch (error) {
             res.status(500).json({
@@ -121,3 +128,4 @@ class UserController{
         //send email reset link to the user
     }
 }
+module.exports  = UserController;
