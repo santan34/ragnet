@@ -1,10 +1,6 @@
 const mongoClient = require("../utils/db");
 
 const botSchema = new mongoClient.client.Schema({
-  botId: {
-    type: String,
-    required: true,
-  },
   botName: {
     type: String,
     required: true,
@@ -12,6 +8,10 @@ const botSchema = new mongoClient.client.Schema({
   botDescription: {
     type: String,
     required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
   botDocuments: [
     {
