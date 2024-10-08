@@ -22,3 +22,10 @@ const fileFilter = (req, file, cb) => {
     //potentially problematic
   }
 }
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+});
+
+ module.exports = upload;
