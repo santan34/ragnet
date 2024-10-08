@@ -3,6 +3,7 @@ const path = require("path");
 const Document = require("../models/documents");
 const Bot = require("../models/bots");
 const { documentValidationSchema } = require("../utils/joi");
+const NodeZip = require("node-zip");
 
 class FileControler {
   static async uploadFile(req, res) {
@@ -118,8 +119,48 @@ class FileControler {
   }
 
   static async downloadFiles(req, res) {
-    
-
+    //download multiple files
+    const { docIds } = req.body;
+    if (!docIds || docIds.length === 0) {
+      res.status(400).json({
+        error: "No files selected",
+      });
+      return;
+    }
+    try {
+      const documents = await Document.find({ _id: { $in: docIds } });
+      if (documents.length === 0) {
+        res.status(404).json({
+          error: "Files not found",
+        });
+        return;
+      }
+      const zip = new NodeZip();
+      documents.forEach((document) => {
+        const filepath = path.join(__dirname, document.path);
+        if (!fs.existsSync(filepath)) {
+          res.status(404).json({
+            error: "File not found on server",
+            file : document.name
+          });
+          continue;
+        }
+        zip.file(document.name, fs.readFileSync(filepath));
+      });
+      const data = zip.generate({ base64: false, compression: "DEFLATE" });
+      res.setHeader("Content-Disposition", `attachment; filename=files.zip`);
+      res.setHeader("Content-Type", "application/zip");
+      res.send(Buffer.from(data, "binary"));
+      res.status(200).json({
+        message: "Files downloading successfully",
+      });
+      return;
+    } catch (error) {
+      res.status(500).json({
+        error: `Internal server error: ${error}`,
+      });
+      return;
+    }
   }
 
   static async deleteFile(req, res) {
