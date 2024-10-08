@@ -28,5 +28,5 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-const User = mongoClient.model("User", userSchema);
+const User = mongoClient.client.model("User", userSchema);
 module.exports = User;

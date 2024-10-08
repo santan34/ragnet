@@ -26,5 +26,5 @@ const botSchema = new mongoClient.client.Schema({
   },
 });
 
-const Bot = mongoClient.model("Bot", botSchema);
+const Bot = mongoClient.client.model("Bot", botSchema);
 module.exports = Bot;

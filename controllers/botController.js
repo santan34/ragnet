@@ -1,9 +1,8 @@
-const botValidationSchema = require("../utils/joi");
+const { botValidationSchema } = require("../utils/joi");
 const Bot = require("../models/bots");
 const User = require("../models/users");
-const { boolean } = require("joi");
 
-class BotContoller {
+class BotController {
   constructor() {}
   async createBot(req, res) {
     const { name, description } = req.body;
