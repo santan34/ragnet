@@ -6,6 +6,7 @@ const { documentValidationSchema } = require("../utils/joi");
 const NodeZip = require("node-zip");
 
 class FileControler {
+  //uploads a file from local storage
   static async uploadFile(req, res) {
     if(!req.file) {
       res.status(400).json({
@@ -14,7 +15,6 @@ class FileControler {
       return;
     }
     //validate that only pdf files are uploaded
-
     const fileDetails = {
       name: req.file.originalname,
       type: req.file.mimetype,
@@ -46,6 +46,7 @@ class FileControler {
     //HANDLE SINgle file upload
   }
 
+  //uploads multiple files from local storage
   static async uploadMultipleFiles(req, res) {
     //multiple file upload
     if(!req.files || req.files.length === 0) {
@@ -75,8 +76,6 @@ class FileControler {
       message: "Files uploaded successfully",
       files: documents,
     });
-  
-
   } catch (error) {
     res.status(500).json({
       error: `Internal server error: ${error}`,
@@ -84,6 +83,7 @@ class FileControler {
     return;
   }}
 
+  //downloads a file from the server
   static async downloadFile(req, res) {
     //download file
     try {
@@ -118,6 +118,8 @@ class FileControler {
 
   }
 
+
+  //downloads multiple files from the server
   static async downloadFiles(req, res) {
     //download multiple files
     const { docIds } = req.body;
@@ -135,17 +137,15 @@ class FileControler {
         });
         return;
       }
-      const zip = new NodeZip();
-      documents.forEach((document) => {
+      const zip = new NodeZip();  
+      const validDocuments = [];
+      documents.forEach(async (document) => {
         const filepath = path.join(__dirname, document.path);
         if (!fs.existsSync(filepath)) {
-          res.status(404).json({
-            error: "File not found on server",
-            file : document.name
-          });
-          continue;
+          await Document.findByIdAndDelete(document._id);
+        } else {
+          zip.file(document.name, fs.readFileSync(filepath));
         }
-        zip.file(document.name, fs.readFileSync(filepath));
       });
       const data = zip.generate({ base64: false, compression: "DEFLATE" });
       res.setHeader("Content-Disposition", `attachment; filename=files.zip`);
@@ -163,15 +163,104 @@ class FileControler {
     }
   }
 
+
+  //deletes a file from the server
   static async deleteFile(req, res) {
-    //delete file
+    //delete a file
+    const { docId } = req.body;
+    try {
+      const document = await Document.findById(docId);
+      if (!document) {
+        res.status(404).json({
+          error: "File not found",
+        });
+        return;
+      }
+      const filepath = path.join(__dirname, document.path);
+      if (!fs.existsSync(filepath)) {
+        await Document.findByIdAndDelete(docId);
+        res.status(404).json({
+          error: "File not found on server",
+        });
+        return;
+      }
+      fs.unlinkSync(filepath);
+      await Document.findByIdAndDelete(docId);
+      res.status(200).json({
+        message: "File deleted successfully",
+      });
+      return;
+    } catch (error) {
+      res.status(500).json({
+        error: `Internal server error: ${error}`,
+      });
+      return;
+   }
   }
 
+  //deletes multiple files from the server
   static async deleteFiles(req, res) {
     //delete multiple files
+    const { docIds } = req.body;
+    if (!docIds || docIds.length === 0) {
+      res.status(400).json({
+        error: "No files selected",
+      });
+      return;
+    }
+    try {
+      const documents = await Document.find({_id: {$in: docIds}});
+      if (documents.length === 0) {
+        res.status(404).json({
+          error: "Files not found",
+        });
+        return;
+      }
+      documents.forEach( async (document) => {
+        const filepath = path.join(__dirname, document.path);
+        if (!fs.existsSync(filepath)) {
+          await Document.findByIdAndDelete(document._id);
+        } else{
+          fs.unlinkSync(filepath);
+          await Document.findByIdAndDelete(document._id);
+        }
+      })
+    res.status(200).json({
+      message: "Files deleted successfully",
+    });
+    return;
+  } catch (error) {
+      res.status(500).json({
+        error: `Internal server error: ${error}`,
+      });
+      return;
+    }
   }
 
+  //get information about a file from the server
   static async getFileInformation(req, res) {
     //send information about a file
+    const { docId } = req.body;
+    try {
+      const document = await Document.findById(docId);
+      if (!document) {
+        res.status(404).json({
+          error: "File not found",
+        });
+        return;
+      }
+      res.status(200).json({
+        message: "File information sent successfully",
+        file: document,
+      });
+      return;
+    } catch (error) {
+      res.status(500).json({
+        error: `Internal server error: ${error}`,
+      });
+      return;
+    }
   }
 }
+
+module.exports = FileControler;
