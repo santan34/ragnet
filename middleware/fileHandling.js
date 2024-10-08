@@ -1,3 +1,4 @@
+const res = require("express/lib/response");
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -9,3 +10,15 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   },
 });
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === "application/pdf") {
+    cb(null, true);
+  } else {
+    cb(res.status(400).json({
+      error: "Only pdf files are allowed",
+    }));
+    return;
+    //potentially problematic
+  }
+}
