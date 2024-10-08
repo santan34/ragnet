@@ -1,4 +1,4 @@
-const schema = require("../utils/joi/schema");
+const { userValidationSchema } = require("../utils/joi/userValidationSchema");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
@@ -15,7 +15,7 @@ class UserController {
   static async createUser(req, res) {
     const { password, email, confirmPassword } = req.body;
     const toValidate = { email, password };
-    const { error } = schema.validate(toValidate);
+    const { error } = userValidationSchema.validate(toValidate);
     if (error) {
       res.status(400).json({
         error: error.details[0].message,
@@ -55,7 +55,7 @@ class UserController {
     try {
       const { password, email } = req.body;
       const toValidate = { email, password };
-      const { error } = schema.validate(toValidate);
+      const { error } = userValidationSchema.validate(toValidate);
       if (error) {
         res.status(400).json({
           error: error.details[0].message,

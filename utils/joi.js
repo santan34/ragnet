@@ -15,9 +15,33 @@ const userValidationSchema = joi.object({
 });
 
 const botValidationSchema = joi.object({
-  botName: joi.string().min(2).max(30).required(),
+  botName: joi
+    .string()
+    .min(2)
+    .max(30)
+    .required(),
 
-  botDescription: joi.string().min(5).max(100).required(),
+  botDescription: joi
+    .string()
+    .min(5)
+    .max(100)
+    .required(),
 });
 
-module.exports = { userValidationSchema, botValidationSchema };
+const documentValidationSchema = joi.object({
+  documentName: joi
+    .string()
+    .min(2)
+    .max(30)
+    .required(),
+
+  content: joi
+    .string()
+    .min(5)
+    .max(100)
+    .required(),
+});
+
+
+
+module.exports = { userValidationSchema, botValidationSchema, documentValidationSchema };
