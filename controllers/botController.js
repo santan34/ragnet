@@ -1,6 +1,7 @@
 const { botValidationSchema } = require("../utils/joi");
 const Bot = require("../models/bots");
 const User = require("../models/users");
+const Document = require("../models/documents");
 
 class BotController {
   constructor() {}
@@ -44,8 +45,5 @@ class BotController {
       });
       return;
     }
-  }
-  async getBot(req, res) {
-    //get bot details for req.params.id
   }
 }
