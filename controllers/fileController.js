@@ -8,7 +8,14 @@ const NodeZip = require("node-zip");
 class FileControler {
   //uploads a file from local storage
   static async uploadFile(req, res) {
-    if(!req.file) {
+    const { botId } = req.params;
+    if (!botId) {
+      res.status(400).json({
+        error: "Bot id is required",
+      });
+      return;
+    }
+    if (!req.file) {
       res.status(400).json({
         error: "No file uploadeded",
       });
@@ -27,13 +34,21 @@ class FileControler {
     try {
       const newDoc = new Document(fileDetails);
       await newDoc.save();
+      chatBot = await Bot.findById(botId);
+      if (!chatBot) {
+        res.status(404).json({
+          error: "Bot not found",
+        });
+        return;
+      }
+      chatBot.documents.push(newDoc._id);
+      await chatBot.save();
       res.status(200).json({
         message: "File uploaded successfully",
         file: newDoc,
       });
-      return
-    }
-    catch (error) {
+      return;
+    } catch (error) {
       res.status(500).json({
         error: `Internal server error: ${error}`,
       });
@@ -49,7 +64,14 @@ class FileControler {
   //uploads multiple files from local storage
   static async uploadMultipleFiles(req, res) {
     //multiple file upload
-    if(!req.files || req.files.length === 0) {
+    const { botId } = req.params;
+    if (!botId) {
+      res.status(400).json({
+        error: "Bot id is required",
+      });
+      return;
+    }
+    if (!req.files || req.files.length === 0) {
       res.status(400).json({
         error: "No files uploaded",
       });
@@ -57,6 +79,13 @@ class FileControler {
     }
 
     try {
+      const chatBot = await Bot.findById(botId);
+      if (!chatBot) {
+        res.status(404).json({
+          error: "Bot not found",
+        });
+        return;
+      }
       const documents = [];
       for (const file of req.files) {
         const fileDetails = {
@@ -66,29 +95,32 @@ class FileControler {
           content: file.buffer,
           createdAt: new Date(),
           //play with the path to get the right path
-          path: file.path
-        }
+          path: file.path,
+        };
         const newDoc = new Document(fileDetails);
         await newDoc.save();
+        chatBot.documents.push(newDoc._id);
+        await chatBot.save();
         documents.push(newDoc);
+      }
+      res.status(200).json({
+        message: "Files uploaded successfully",
+        files: documents,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: `Internal server error: ${error}`,
+      });
+      return;
     }
-    res.status(200).json({
-      message: "Files uploaded successfully",
-      files: documents,
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: `Internal server error: ${error}`,
-    });
-    return;
-  }}
+  }
 
   //downloads a file from the server
   static async downloadFile(req, res) {
     //download file
     try {
       //handle jwt for the files
-      const { docId } = req.bod
+      const { docId } = req.bod;
       const document = await Document.findById(docId);
       if (!document) {
         res.status(404).json({
@@ -103,11 +135,14 @@ class FileControler {
         });
         return;
       }
-      res.setHeader("Content-Disposition", `attachment; filename=${document.name}`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=${document.name}`
+      );
       res.download(document.path, document.name);
       res.status(200).json({
-        message: "File downloading successfully"
-      })
+        message: "File downloading successfully",
+      });
       return;
     } catch (error) {
       res.status(500).json({
@@ -115,9 +150,7 @@ class FileControler {
       });
       return;
     }
-
   }
-
 
   //downloads multiple files from the server
   static async downloadFiles(req, res) {
@@ -137,7 +170,7 @@ class FileControler {
         });
         return;
       }
-      const zip = new NodeZip();  
+      const zip = new NodeZip();
       const validDocuments = [];
       documents.forEach(async (document) => {
         const filepath = path.join(__dirname, document.path);
@@ -163,13 +196,32 @@ class FileControler {
     }
   }
 
-
   //deletes a file from the server
   static async deleteFile(req, res) {
     //delete a file
+    const { botId } = req.params;
+    if (!botId) {
+      res.status(400).json({
+        error: "Bot id is required",
+      });
+      return;
+    }
     const { docId } = req.body;
+    if (!docId) {
+      res.status(400).json({
+        error: "File id is required",
+      });
+      return;
+    }
     try {
       const document = await Document.findById(docId);
+      const chatBot = await Bot.findById(botId);
+      if (!chatBot) {
+        res.status(404).json({
+          error: "Bot not found",
+        });
+        return;
+      }
       if (!document) {
         res.status(404).json({
           error: "File not found",
@@ -185,6 +237,9 @@ class FileControler {
         return;
       }
       fs.unlinkSync(filepath);
+      chatBot.documents = chatBot.documents.filter(
+        (doc) => doc.toString() !== docId
+      );
       await Document.findByIdAndDelete(docId);
       res.status(200).json({
         message: "File deleted successfully",
@@ -195,12 +250,19 @@ class FileControler {
         error: `Internal server error: ${error}`,
       });
       return;
-   }
+    }
   }
 
   //deletes multiple files from the server
   static async deleteFiles(req, res) {
     //delete multiple files
+    const { botId } = req.params;
+    if (!botId) {
+      res.status(400).json({
+        error: "Bot id is required",
+      });
+      return;
+    }
     const { docIds } = req.body;
     if (!docIds || docIds.length === 0) {
       res.status(400).json({
@@ -209,27 +271,31 @@ class FileControler {
       return;
     }
     try {
-      const documents = await Document.find({_id: {$in: docIds}});
+      const chatBot = await Bot.findById(botId);
+      const documents = await Document.find({ _id: { $in: docIds } });
       if (documents.length === 0) {
         res.status(404).json({
           error: "Files not found",
         });
         return;
       }
-      documents.forEach( async (document) => {
+      documents.forEach(async (document) => {
         const filepath = path.join(__dirname, document.path);
         if (!fs.existsSync(filepath)) {
           await Document.findByIdAndDelete(document._id);
-        } else{
+        } else {
           fs.unlinkSync(filepath);
+          chatBot.documents = chatBot.documents.filter(
+            (doc) => doc.toString() !== document._id
+          );
           await Document.findByIdAndDelete(document._id);
         }
-      })
-    res.status(200).json({
-      message: "Files deleted successfully",
-    });
-    return;
-  } catch (error) {
+      });
+      res.status(200).json({
+        message: "Files deleted successfully",
+      });
+      return;
+    } catch (error) {
       res.status(500).json({
         error: `Internal server error: ${error}`,
       });
