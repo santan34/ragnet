@@ -46,6 +46,9 @@ class embeddingsClient{
         }
     }
 
+    static async queryCollection(botName) {
+
+    }
 // input order
 // ids - required
 // embeddings - optional
