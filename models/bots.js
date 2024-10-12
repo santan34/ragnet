@@ -1,4 +1,5 @@
-const mongoClient = require("../utils/db");
+const e = require('express');
+const mongoClient = require('../utils/db');
 
 const botSchema = new mongoClient.client.Schema({
   botName: {
@@ -16,15 +17,12 @@ const botSchema = new mongoClient.client.Schema({
   botDocuments: [
     {
       type: mongoClient.client.Schema.Types.ObjectId,
-      ref: "Document",
+      ref: 'Document',
     },
   ],
-  botEmbeddings: {
-    type: Map,
-    of: mongoose.Schema.Types.Mixed,
-    default: {},
-  },
+  //link to a collection of embeddings
+  botEmbeddings: [embeddngSchema],
 });
 
-const Bot = mongoClient.client.model("Bot", botSchema);
+const Bot = mongoClient.client.model('Bot', botSchema);
 module.exports = Bot;

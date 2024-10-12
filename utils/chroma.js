@@ -1,18 +1,18 @@
 
 const { ChromaClient } = require("chromadb");
 
-class ChromaClient{
+class embeddingsClient{
 
-    constructor(){
+    constructor() {
         this.client = new ChromaClient();
     }//create a chroma client
 
-    static async createCollection(botname, documents){
+    static async addDocuments(botName, documents){
         try {
             await this.client.createCollection({
-                name: botname,
+                name: botName,
                 //question mark panapa
-                document: documents,
+                document: documents
             });
             console.log("Collection created");
         }catch(error){
@@ -21,11 +21,10 @@ class ChromaClient{
         }
     }//create a collection
 
-    static async deleteCollection(botname){
+    static async deleteCollection(botName){
         try{
-            const collection = await client.getCollection({ name: botname });
-            collection = await client.getOrCreateCollection({ name: botnmae });
-            await client.deleteCollection(collection);
+            const collection = await this.client.getOrCreateCollection({ name: botName });
+            await this.client.deleteCollection(collection);
             console.log("Collection deleted");
         }catch(error){
             console.log("Error deleting collection");
@@ -33,14 +32,24 @@ class ChromaClient{
         }
     }//delete a collection
 
-    static async queryCollection(botname, query){
-        try{
-            const collection = await client.getCollection({ name: botname });
-            const results = await
-        }catch(error){
-            console.log("Error querying collection");
+    static async addToCollection(botName, documentsToEmbed) {
+        try {
+            const collection = await this.client.getOrCreaterCollection();
+            await collection.add({
+                name: botName,
+                documents: documentsToEmbed,
+            })
+            console.log("documents have been added and stored");
+        } catch (error) {
+            console.log("error");
             throw error;
         }
     }
+
+// input order
+// ids - required
+// embeddings - optional
+// metadata - optional
+// documents - optional
 }
 //creata a function that makes collections from documen
