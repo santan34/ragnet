@@ -322,7 +322,7 @@ class FileControler {
       return;
     } catch (error) {
       res.status(500).json({
-        error: `Internal server error: ${error}`,1
+        error: `Internal server error: ${error}`,
       });
       return;
     }

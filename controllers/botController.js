@@ -5,6 +5,7 @@ const Document = require("../models/documents");
 
 class BotController {
   constructor() {}
+
   async createBot(req, res) {
     const { name, description } = req.body;
     const userId = req.userId;
