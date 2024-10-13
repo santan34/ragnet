@@ -1,58 +1,81 @@
-
+const { OpenAIEmbeddingFunction } = require('chromadb');
 const { ChromaClient } = require("chromadb");
 
-class embeddingsClient{
+const embeddingFunction = new OpenAIEmbeddingFunction({
+    openai_api_key: "apiKey",
+    model: "text-embedding-3-small"
+})
 
+class EmbeddingsClient {
     constructor() {
         this.client = new ChromaClient();
-    }//create a chroma client
+    }
 
-    static async addDocuments(botName, documents){
+    async addDocuments(botName, documents) {
         try {
-            await this.client.createCollection({
-                name: botName,
-                //question mark panapa
-                document: documents
+            const collectionName = `user_${botName}_documents`;
+            let collection = await this.client.getCollection({
+                name: collectionName
+            });
+            if (!collection) {
+                collection = await this.client.createCollection({
+                    name: collectionName,
+                    embeddingFunction: embeddingFunction,
+                });
+            }
+
+            await collection.add({
+                documents: documents,
+                metadata: documents.map((chunk, idx) => ({
+                    botName,
+                    chunkId: idx
+                })),
+                ids: documents.map((_, idx) => `${botName}_${idx}`)
             });
             console.log("Collection created");
-        }catch(error){
+        } catch (error) {
             console.log("Error creating collection");
             throw error;
         }
-    }//create a collection
+    }
 
-    static async deleteCollection(botName){
-        try{
-            const collection = await this.client.getOrCreateCollection({ name: botName });
+    async deleteCollection(botName) {
+        try {
+            const collectionName = `user_${botName}_documents`;
+            const collection = await this.client.getOrCreateCollection({name: collectionName});
             await this.client.deleteCollection(collection);
             console.log("Collection deleted");
-        }catch(error){
+        } catch (error) {
             console.log("Error deleting collection");
             throw error;
         }
-    }//delete a collection
+    }
 
-    static async addToCollection(botName, documentsToEmbed) {
+    //query a collection
+    async queryCollection(botName, searchText) {
+        const collectionName = `user_${botName}_documents`;
         try {
-            const collection = await this.client.getOrCreaterCollection();
-            await collection.add({
-                name: botName,
-                documents: documentsToEmbed,
-            })
-            console.log("documents have been added and stored");
+            // Retrieve the collection
+            const collection = await this.client.getCollection({
+                name: collectionName,
+                embeddingFunction: embeddingFunction
+            });
+            if (!collection) {
+                console.log(`Collection '${collectionName}' does not exist.`);
+                return;
+            }
+            // Example query to search for documents containing the searchText
+            const queryResults = await collection.query({
+                filter: {document: {$contains: searchText}}, // Modify based on your query structure
+                limit: 10 // Limit the number of results returned
+            });
+            console.log(`Query Results for '${searchText}':`, queryResults);
         } catch (error) {
-            console.log("error");
+            console.log('error');
             throw error;
         }
     }
-
-    static async queryCollection(botName) {
-
-    }
-// input order
-// ids - required
-// embeddings - optional
-// metadata - optional
-// documents - optional
 }
-//creata a function that makes collections from documen
+
+const embeddingClient = new EmbeddingsClient();
+module.exports = embeddingClient;
