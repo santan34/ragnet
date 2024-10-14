@@ -11,4 +11,4 @@ const chatRoutes = (app) => {
     app.post("api/chat/restart", ChatController.restartChat);
 };
 
-module.export = chatRoutes;
+module.exports = chatRoutes;

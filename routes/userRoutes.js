@@ -10,4 +10,4 @@ const userRoutes = (app) => {
   //logout
 };
 
-module.export = userRoutes;
+module.exports = userRoutes;
