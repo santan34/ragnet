@@ -1,6 +1,6 @@
 const mongoose = require('../utils/db');
 
-const documentSchema = new mongoose.Schema({
+const messageSchema = new mongoose.Schema({
   conversationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Conversation",

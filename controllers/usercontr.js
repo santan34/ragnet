@@ -13,35 +13,36 @@ const createToken = (userId) => {
 
 class UserController {
   static async createUser(req, res) {
+    console.log(req.body);
     const { email, password, confirmPassword } = req.body;
-    const toValidate = { email, password }
+    console.log(1)
+    const toValidate = { email, password };
+    console.log(2)
     const { error } = userValidationSchema.validate(toValidate);
+    console.log(3)
     if (error) {
       return res.status(400).json({
         error: error.details[0].message,
       });
     }
+    console.log(4)
     if (password !== confirmPassword) {
       return res.status(400).json({
         error: "Passwords do not match",
       });
     }
     try {
-      console.log(-2)
-      const exists = await User.findOne({ email });
-      console.log(-1)
+      console.log(5)
       if (exists) {
         return res.status(400).json({
           error: "Email already exists",
         });
       }
       //verify if the email belongs to a user
-      console.log(1);
+      console.log(6)
       const newUSer = new User({ email, password });
-      console.log(password)
-      console.log(4)
+      con
       await newUSer.save();
-      console.log(3)
       return res.status(200).json({
         message: "New user created successfully",
         //iplement login

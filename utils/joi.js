@@ -10,7 +10,7 @@ const userValidationSchema = joi.object({
     .string()
     .min(8)
     .max(30)
-    .pattern(new RegExp("^[a-zA-Z0-9]{3,30}$"))
+    .pattern(new RegExp("^[a-zA-Z0-9@#_!$%^&*]{8,30}$"))
     .required(),
 });
 
@@ -41,7 +41,5 @@ const documentValidationSchema = joi.object({
     .max(100)
     .required(),
 });
-
-
 
 module.exports = { userValidationSchema, botValidationSchema, documentValidationSchema };
