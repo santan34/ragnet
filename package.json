@@ -17,8 +17,13 @@
   },
   "homepage": "https://github.com/santan34/ragnet#readme",
   "dependencies": {
+    "@langchain/community": "^0.3.5",
+    "@langchain/core": "^0.3.11",
+    "@langchain/openai": "^0.3.7",
     "@pinecone-database/pinecone": "^3.0.3",
     "bcrypt": "^5.1.1",
+    "chromadb": "^1.9.2",
+    "dotenv": "^16.4.5",
     "eslint": "^9.12.0",
     "express": "^4.21.0",
     "joi": "^17.13.3",

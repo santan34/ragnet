@@ -1,0 +1,4 @@
+@langchain/community
+chroma sdk
+npm i @langchain/community @langchain/openai @langchain/core chromadb
+process.env.OPENAI_API_KEY = "YOUR_API_KEY";
