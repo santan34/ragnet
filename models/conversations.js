@@ -2,12 +2,12 @@ const mongoClient = require('../utils/db');
 
 const conversationSchema = new mongoClient.client.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoClient.client.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
   botId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoClient.client.Schema.Types.ObjectId,
     ref: "Bot",
     required: true,
   },

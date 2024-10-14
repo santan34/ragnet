@@ -1,5 +1,5 @@
-const Conversation = require("../models/conversation");
-const Message = require("../models/message");
+const Conversation = require("../models/conversations");
+const Message = require("../models/messages");
 const Bot = require("../models/bots");
 
 class ChatController {
@@ -13,9 +13,9 @@ class ChatController {
       }
       const conversation = new Conversation({ userId, botId });
       await conversation.save();
-      res.status(200).json({ chatId: conversation._id, message: "Chat initiated successfully" });
+      return res.status(200).json({ chatId: conversation._id, message: "Chat initiated successfully" });
     } catch (error) {
-      res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
 
@@ -32,9 +32,9 @@ class ChatController {
       const botResponse = "This is a placeholder response from the bot.";
       const botMessage = new Message({ conversationId: chatId, sender: "bot", message: botResponse });
       await botMessage.save();
-      res.status(200).json({ message, response: botResponse });
+      return res.status(200).json({ message, response: botResponse });
     } catch (error) {
-      res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
 
@@ -42,9 +42,9 @@ class ChatController {
     const { chatId } = req.query;
     try {
       const messages = await Message.find({ conversationId: chatId }).sort({ createdAt: 1 });
-      res.status(200).json({ messages });
+      return res.status(200).json({ messages });
     } catch (error) {
-      res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
 
@@ -57,9 +57,9 @@ class ChatController {
       }
       conversation.status = "ended";
       await conversation.save();
-      res.status(200).json({ message: "Chat ended successfully" });
+      return res.status(200).json({ message: "Chat ended successfully" });
     } catch (error) {
-      res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
   static async getChatStatus(req, res) {
@@ -69,9 +69,9 @@ class ChatController {
       if (!conversation) {
         return res.status(404).json({ error: "Chat not found" });
       }
-      res.status(200).json({ status: conversation.status });
+      return res.status(200).json({ status: conversation.status });
     } catch (error) {
-      res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
 
@@ -82,9 +82,9 @@ class ChatController {
       if (!bot) {
         return res.status(404).json({ error: "Bot not found" });
       }
-      res.status(200).json({ botInfo: { name: bot.name, description: bot.description } });
+      return res.status(200).json({ botInfo: { name: bot.name, description: bot.description } });
     } catch (error) {
-      res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
 
@@ -97,9 +97,9 @@ class ChatController {
       }
       conversation.messages = [];
       await conversation.save();
-      res.status(200).json({ message: "Chat restarted successfully" });
+      return res.status(200).json({ message: "Chat restarted successfully" });
     } catch (error) {
-      res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
 }

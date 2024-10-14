@@ -7,7 +7,7 @@ const NodeZip = require("node-zip");
 const docsFromPDFs = require("../services/pdfLoader");
 const embeddingClient = require("../utils/chroma");
 
-class FileControler {
+class FileController {
   //uploads a file from local storage
   static async uploadFile(req, res) {
     const { botId } = req.params;
@@ -19,7 +19,7 @@ class FileControler {
     }
     if (!req.file) {
       res.status(400).json({
-        error: "No file uploadeded",
+        error: "No file uploaded",
       });
       return;
     }

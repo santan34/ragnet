@@ -1,8 +1,8 @@
-const mongoClient = require('../utils/mongoClient');
+const mongoClient = require('../utils/db');
 
 const documentSchema = new mongoClient.client.Schema({
   conversationId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoClient.client.Schema.Types.ObjectId,
     ref: "Conversation",
     required: true,
   },

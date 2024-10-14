@@ -13,6 +13,7 @@ const docsFromPDFs = async (paths_to_pdfs) => {
   for (const path of paths_to_pdfs) {
     const loader = new PDFLoader(path);
     const docs = await loader.loadAndSplit(splitter);
+    //mmmm musa
     allDocs.push(...docs);
   }
 

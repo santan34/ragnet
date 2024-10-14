@@ -19,8 +19,6 @@ const botSchema = new mongoClient.client.Schema({
       ref: 'Document',
     },
   ],
-  //link to a collection of embeddings
-  botEmbeddings: [embeddngSchema],
 });
 
 const Bot = mongoClient.client.model('Bot', botSchema);

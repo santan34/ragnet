@@ -1,4 +1,4 @@
-const mongoClient = require('../utils/mongoClient');
+const mongoClient = require('../utils/db');
 
 const documentSchema = new mongoClient.client.Schema({
     documentName: {
@@ -28,4 +28,4 @@ const documentSchema = new mongoClient.client.Schema({
 })
 
 const Document = mongoClient.client.model('Document', documentSchema);
-MediaSourceHandle.exports = Document;
+module.exports = Document;
