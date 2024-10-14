@@ -4,6 +4,8 @@ const Document = require("../models/documents");
 const Bot = require("../models/bots");
 const { documentValidationSchema } = require("../utils/joi");
 const NodeZip = require("node-zip");
+const docsFromPDFs = require("../services/pdfLoader");
+const embeddingClient = require("../utils/chroma");
 
 class FileControler {
   //uploads a file from local storage
@@ -42,6 +44,11 @@ class FileControler {
         return;
       }
       chatBot.documents.push(newDoc._id);
+      const docList = [];
+      docList.push(req.file.path);
+      const docs = docsFromPDFs(docList);
+      //create embbedings
+      await embeddingClient.addDocuments(chatBot.botName, docs)
       await chatBot.save();
       res.status(200).json({
         message: "File uploaded successfully",
@@ -87,6 +94,7 @@ class FileControler {
         return;
       }
       const documents = [];
+      const docList = []
       for (const file of req.files) {
         const fileDetails = {
           name: file.originalname,
@@ -102,7 +110,10 @@ class FileControler {
         chatBot.documents.push(newDoc._id);
         await chatBot.save();
         documents.push(newDoc);
+        docList.push(file.path);
       }
+      const docs = docsFromPDFs(docList);
+      await embeddingClient.addDocuments(chatBot.botName, docs);
       res.status(200).json({
         message: "Files uploaded successfully",
         files: documents,
@@ -241,6 +252,7 @@ class FileControler {
         (doc) => doc.toString() !== docId
       );
       await Document.findByIdAndDelete(docId);
+      await embeddingClient.deleteCollection(chatBot.botName);
       res.status(200).json({
         message: "File deleted successfully",
       });
@@ -291,6 +303,7 @@ class FileControler {
           await Document.findByIdAndDelete(document._id);
         }
       });
+      await embeddingClient.deleteCollection(chatBot.botName);
       res.status(200).json({
         message: "Files deleted successfully",
       });
