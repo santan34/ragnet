@@ -133,7 +133,7 @@ class UserController {
     //send email reset link to the user
   }
 
-  static async getUserProfile(res, req) {
+  static async getUserProfile(req, res) {
     try {
       const userId = req.userId;
       console.log(userId)
