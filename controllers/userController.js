@@ -1,6 +1,7 @@
 const { userValidationSchema } = require("../utils/joi");
 const User = require("../models/users");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 //creates a jwt token based of the userId
 const secret = process.env.JWT_SECRET || "getishjdty-uc565gtduf-fv";
@@ -66,7 +67,7 @@ class UserController {
       const user = await User.findOne({ email });
       if (!user) {
         return res.status(400).json({
-          error: "Invalid email or password",
+          error: "Invalid email",
         });
       }
       const isMatch = await bcrypt.compare(password, user.password);
@@ -135,6 +136,7 @@ class UserController {
   static async getUserProfile(res, req) {
     try {
       const userId = req.userId;
+      console.log(userId)
       const user = await User.findById(userId).select("-password");
       if (!user) {
         return res.status(404).json({
