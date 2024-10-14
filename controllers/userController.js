@@ -97,7 +97,7 @@ class UserController {
     //delete the user from the database
     try {
       const userId = req.userId;
-      await User.findByIdAndDelete({ email });
+      await User.findByIdAndDelete(userId);
       return res.status(200).json({ message: "User deleted succesfully" });
     } catch (error) {
       return res.status(500).json({ error: `intenal server error ${error}` });
