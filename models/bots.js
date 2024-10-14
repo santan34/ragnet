@@ -1,4 +1,3 @@
-const e = require('express');
 const mongoClient = require('../utils/db');
 
 const botSchema = new mongoClient.client.Schema({

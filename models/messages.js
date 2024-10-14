@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
+const mongoClient = require('../utils/mongoClient');
 
-const messageSchema = new mongoose.Schema({
+const documentSchema = new mongoClient.client.Schema({
   conversationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Conversation",
@@ -21,6 +21,6 @@ const messageSchema = new mongoose.Schema({
   },
 });
 
-const Message = mongoose.model("Message", messageSchema);
+const Message = mongoClient.client.model("Message", messageSchema);
 
 module.exports = Message;

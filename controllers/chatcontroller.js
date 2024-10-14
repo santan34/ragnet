@@ -5,6 +5,7 @@ const Bot = require("../models/bots");
 class ChatController {
   static async initiateChat(req, res) {
     const { userId, botId } = req.body;
+    //??
     try {
       const bot = await Bot.findById(botId);
       if (!bot) {
@@ -50,14 +51,17 @@ class ChatController {
   static async endChat(req, res) {
     const { chatId } = req.body;
     try {
-      await Conversation.findByIdAndDelete(chatId);
-      await Message.deleteMany({ conversationId: chatId });
+      const conversation = await Conversation.findById(chatId);
+      if (!conversation) {
+        return res.status(404).json({ error: "Chat not found" });
+      }
+      conversation.status = "ended";
+      await conversation.save();
       res.status(200).json({ message: "Chat ended successfully" });
     } catch (error) {
       res.status(500).json({ error: `Internal server error: ${error}` });
     }
   }
-
   static async getChatStatus(req, res) {
     const { chatId } = req.query;
     try {
