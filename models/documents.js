@@ -1,6 +1,6 @@
-const mongoClient = require('../utils/db');
+const mongoose = require('../utils/db');
 
-const documentSchema = new mongoClient.client.Schema({
+const documentSchema = new mongoose.Schema({
     documentName: {
         type: String,
         required: true,
@@ -27,5 +27,5 @@ const documentSchema = new mongoClient.client.Schema({
     }
 })
 
-const Document = mongoClient.client.model('Document', documentSchema);
+const Document = mongoose.model('Document', documentSchema);
 module.exports = Document;

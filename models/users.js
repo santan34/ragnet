@@ -1,9 +1,9 @@
-const mongoClient = require("../utils/db");
+const mongoose = require("../utils/db");
 const Bot = require("./bots");
 const bcrypt = require("bcrypt");
 
 //create the user schema
-const userSchema = new mongoClient.client.Schema({
+const userSchema = new mongoose.client.Schema({
   password: {
     type: String,
     required: true,
@@ -14,7 +14,7 @@ const userSchema = new mongoClient.client.Schema({
   },
   bots: [
     {
-      type: mongoClient.client.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Bot",
     },
   ],
@@ -28,5 +28,5 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-const User = mongoClient.client.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 module.exports = User;

@@ -8,7 +8,6 @@ async sendMessage(messageText, chatID, botName) {
     try {
       // Query the collection using the botName and searchText
       const queryResults = await queryCollection(botName, message);
-
       // Use OpenAI to generate a meaningful response
       const response = await openai.chat.completions.create({
           model: 'gpt-3.5-turbo-16k-0613',

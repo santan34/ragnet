@@ -1,13 +1,13 @@
-const mongoClient = require('../utils/db');
+const mongoose = require('../utils/db');
 
-const conversationSchema = new mongoClient.client.Schema({
+const conversationSchema = new mongoose.Schema({
   userId: {
-    type: mongoClient.client.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
   botId: {
-    type: mongoClient.client.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Bot",
     required: true,
   },
@@ -22,6 +22,6 @@ const conversationSchema = new mongoClient.client.Schema({
   },
 });
 
-const Conversation = mongoClient.client.model("Conversation", conversationSchema);
+const Conversation = mongoose.model("Conversation", conversationSchema);
 
 module.exports = Conversation;

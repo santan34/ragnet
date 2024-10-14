@@ -1,6 +1,6 @@
-const mongoClient = require('../utils/db');
+const mongoose = require('../utils/db');
 
-const botSchema = new mongoClient.client.Schema({
+const botSchema = new mongoose.Schema({
   botName: {
     type: String,
     required: true,
@@ -15,11 +15,11 @@ const botSchema = new mongoClient.client.Schema({
   },
   botDocuments: [
     {
-      type: mongoClient.client.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Document',
     },
   ],
 });
 
-const Bot = mongoClient.client.model('Bot', botSchema);
+const Bot = mongoose.model('Bot', botSchema);
 module.exports = Bot;
