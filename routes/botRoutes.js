@@ -9,4 +9,4 @@ const botRoutes = (app) => {
     app.put('/user/bot/:botId', verifyToken, botController.updateBot);
 }
 
-module.exports = router;
+module.exports = botRoutes;

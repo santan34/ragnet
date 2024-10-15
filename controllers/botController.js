@@ -4,9 +4,7 @@ const User = require("../models/users");
 const Document = require("../models/documents");
 
 class BotController {
-  constructor() {}
-
-  async createBot(req, res) {
+  static async createBot(req, res) {
     const { name, description } = req.body;
     //verifiied route
     const userId = req.userId;
@@ -20,7 +18,10 @@ class BotController {
     }
     try {
       const user = await User.findById(userId).populate("bots");
-      const existingBot = user.bots.find((bot) => bot.name === name);
+      const existingBot = user.bots.find((bot) => {
+        console.log(`Comparing bot name: ${bot.botName} with name: ${name}`);
+        return bot.botName === name;
+      });
       if (existingBot) {
         return res.status(400).json({
           error: "Bot with the same name already exists",
@@ -38,6 +39,7 @@ class BotController {
       return res.status(200).json({
         message: "Bot created successfully",
         bot: savedBot,
+        user: user
       });
     } catch (error) {
       return res.status(500).json({
@@ -50,7 +52,7 @@ class BotController {
     try {
       const userId = req.userId;
       const { botId } = req.params;
-
+      //validation
       // Find the user
       const user = await User.findById(userId);
       if (!user) {
@@ -88,6 +90,7 @@ class BotController {
       const { botId } = req.params;
       const userId = req.userId;
       //add validation
+      //include length of mongoose id
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({
@@ -104,6 +107,7 @@ class BotController {
     }
   }
   
+  //is faulty
   static async updateBot(req, res) {
     try {
       const { botId } = req.params;

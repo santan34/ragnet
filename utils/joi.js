@@ -15,13 +15,13 @@ const userValidationSchema = joi.object({
 });
 
 const botValidationSchema = joi.object({
-  botName: joi
+  name: joi
     .string()
     .min(2)
     .max(30)
     .required(),
 
-  botDescription: joi
+  description: joi
     .string()
     .min(5)
     .max(100)
