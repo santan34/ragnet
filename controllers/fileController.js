@@ -11,6 +11,8 @@ class FileController {
   //uploads a file from local storage
   static async uploadFile(req, res) {
     const { botId } = req.params;
+    //validate these
+    const { fileName } = req.body
     if (!botId) {
       res.status(400).json({
         error: "Bot id is required",
@@ -25,10 +27,9 @@ class FileController {
     }
     //validate that only pdf files are uploaded
     const fileDetails = {
-      name: req.file.originalname,
+      documentName: req.file.originalname,
       type: req.file.mimetype,
       size: req.file.size,
-      content: req.file.buffer,
       createdAt: new Date(),
       //play with the path to get the right path
       path: req.file.path,
@@ -36,20 +37,27 @@ class FileController {
     try {
       const newDoc = new Document(fileDetails);
       await newDoc.save();
-      chatBot = await Bot.findById(botId);
+      console.log(newDoc)
+      console.log(",,,,,,,,,,,,,,,,,,,,,,")
+      const chatBot = await Bot.findById(botId);
+      console.log(chatBot);
       if (!chatBot) {
         res.status(404).json({
           error: "Bot not found",
         });
         return;
       }
-      chatBot.documents.push(newDoc._id);
+      chatBot.botDocuments.push(newDoc._id);
+      console.log(".........after pushing..............");
+      console.log(chatBot);
       //const docList = [];
       //docList.push(req.file.path);
       //const docs = docsFromPDFs(docList);
       //create embbedings
       //await embeddingClient.addDocuments(chatBot.botName, docs)
       await chatBot.save();
+      console.log("000000....the bot...........")
+      console.log(chatBot)
       res.status(200).json({
         message: "File uploaded successfully",
         file: newDoc,
@@ -73,16 +81,14 @@ class FileController {
     //multiple file upload
     const { botId } = req.params;
     if (!botId) {
-      res.status(400).json({
+      return res.status(400).json({
         error: "Bot id is required",
       });
-      return;
     }
     if (!req.files || req.files.length === 0) {
-      res.status(400).json({
+      return res.status(400).json({
         error: "No files uploaded",
       });
-      return;
     }
 
     try {
@@ -97,17 +103,16 @@ class FileController {
       const docList = []
       for (const file of req.files) {
         const fileDetails = {
-          name: file.originalname,
+          documentName: file.originalname,
           type: file.mimetype,
           size: file.size,
-          content: file.buffer,
           createdAt: new Date(),
           //play with the path to get the right path
           path: file.path,
         };
         const newDoc = new Document(fileDetails);
         await newDoc.save();
-        chatBot.documents.push(newDoc._id);
+        chatBot.botDocuments.push(newDoc._id);
         await chatBot.save();
         documents.push(newDoc);
         docList.push(file.path);
