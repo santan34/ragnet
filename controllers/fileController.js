@@ -136,7 +136,8 @@ class FileController {
     //download file
     try {
       //handle jwt for the files
-      const { docId } = req.bod;
+      //validation
+      const { docId } = req.body;
       const document = await Document.findById(docId);
       if (!document) {
         res.status(404).json({
@@ -144,7 +145,8 @@ class FileController {
         });
         return;
       }
-      const filepath = path.join(__dirname, document.path);
+      const filepath = path.join(__dirname,'..', document.path);
+      console.log(filepath);
       if (!fs.existsSync(filepath)) {
         res.status(404).json({
           error: "File not found on server",
