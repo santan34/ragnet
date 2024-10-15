@@ -120,9 +120,12 @@ class BotController {
           error: "User does not have acces to this bot",
         });
       }
+  
       const bot = await Bot.findByIdAndUpdate(
         botId,
-        { name, description },
+        { botName: name,
+          botDescription: description
+        },
         { new: true }
       );
 
