@@ -1,11 +1,12 @@
 const fileController = require("../controllers/fileController");
 const verifyToken = require("../middleware/authMiddleware");
+const upload = require("../middleware/fileHandling")
 
 const fileRoutes = (app) => {
-  app.post("/api/file/upload", verifyToken, fileController.uploadFile);
-  app.get("/api/file/download/:fileId", verifyToken, fileController.downloadFile);
-  app.delete("/api/file/delete/:fileId", verifyToken, fileController.deleteFile);
-  app.get("/api/file/list", verifyToken, fileController.listFiles);
+  app.post("/user/bot/:botId/upload/", verifyToken,upload,fileController.uploadFile);
+  app.get("/user/bot/:botId/download/:", verifyToken,fileController.downloadFile);
+  app.delete("/user/bot/:botId/", verifyToken, fileController.deleteFile);
+  app.get("/user/bot/:botId/", verifyToken, fileController.listFiles);
 };
 
 module.exports = fileRoutes;

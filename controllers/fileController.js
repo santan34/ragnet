@@ -44,11 +44,11 @@ class FileController {
         return;
       }
       chatBot.documents.push(newDoc._id);
-      const docList = [];
-      docList.push(req.file.path);
-      const docs = docsFromPDFs(docList);
+      //const docList = [];
+      //docList.push(req.file.path);
+      //const docs = docsFromPDFs(docList);
       //create embbedings
-      await embeddingClient.addDocuments(chatBot.botName, docs)
+      //await embeddingClient.addDocuments(chatBot.botName, docs)
       await chatBot.save();
       res.status(200).json({
         message: "File uploaded successfully",
@@ -112,8 +112,8 @@ class FileController {
         documents.push(newDoc);
         docList.push(file.path);
       }
-      const docs = docsFromPDFs(docList);
-      await embeddingClient.addDocuments(chatBot.botName, docs);
+      //const docs = docsFromPDFs(docList);
+      //await embeddingClient.addDocuments(chatBot.botName, docs);
       res.status(200).json({
         message: "Files uploaded successfully",
         files: documents,
@@ -342,4 +342,4 @@ class FileController {
   }
 }
 
-module.exports = FileControler;
+module.exports = FileController;

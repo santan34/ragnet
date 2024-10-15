@@ -1,5 +1,5 @@
-import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
-import { CharacterTextSplitter } from '@langchain/text_splitter';
+const  { PDFLoader } = require('@langchain/community/document_loaders/fs/pdf');
+const { CharacterTextSplitter } = require('langchain/text_splitter');
 
 const docsFromPDFs = async (paths_to_pdfs) => {
   const splitter = new CharacterTextSplitter({
@@ -13,11 +13,10 @@ const docsFromPDFs = async (paths_to_pdfs) => {
   for (const path of paths_to_pdfs) {
     const loader = new PDFLoader(path);
     const docs = await loader.loadAndSplit(splitter);
-    //mmmm musa
     allDocs.push(...docs);
   }
 
   return allDocs;
 };
 
-export default docsFromPDFs;
+module.exports = docsFromPDFs;

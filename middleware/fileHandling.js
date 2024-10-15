@@ -15,13 +15,9 @@ const fileFilter = (req, file, cb) => {
   if (file.mimetype === "application/pdf") {
     cb(null, true);
   } else {
-    cb(res.status(400).json({
-      error: "Only pdf files are allowed",
-    }));
-    return;
-    //potentially problematic
+    cb(new Error("Only pdf files are allowed"), false);
   }
-}
+};
 
 const upload = multer({
   storage: storage,
