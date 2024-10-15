@@ -8,6 +8,7 @@ const userRoutes = (app) => {
   app.delete("/user/profile/delete", verifyToken, UserController.deleteUser);
   app.get("/user/profile/change-password",verifyToken,UserController.changePassword);
   //logout
+  //otp tish
 };
 
 module.exports = userRoutes;

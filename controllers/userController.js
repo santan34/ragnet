@@ -129,8 +129,12 @@ class UserController {
     }
   }
 
-  static async forgotPassword(req, res) {
+  static async sendOTP(req, res) {
     //send email reset link to the user
+  }
+
+  static async getOTP(req, res) {
+    
   }
 
   static async getUserProfile(req, res) {
