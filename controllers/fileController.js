@@ -246,7 +246,8 @@ class FileController {
         });
         return;
       }
-      const filepath = path.join(__dirname, document.path);
+      const filepath = path.join(__dirname, '..', document.path);
+      console.log(filepath);
       if (!fs.existsSync(filepath)) {
         await Document.findByIdAndDelete(docId);
         res.status(404).json({
@@ -255,11 +256,11 @@ class FileController {
         return;
       }
       fs.unlinkSync(filepath);
-      chatBot.documents = chatBot.documents.filter(
+      chatBot.botDocuments = chatBot.botDocuments.filter(
         (doc) => doc.toString() !== docId
       );
+      console.log("panapa paita");
       await Document.findByIdAndDelete(docId);
-      await embeddingClient.deleteCollection(chatBot.botName);
       res.status(200).json({
         message: "File deleted successfully",
       });
