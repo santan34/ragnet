@@ -1,38 +1,60 @@
 const { OpenAIEmbeddingFunction } = require('chromadb');
 const { ChromaClient } = require("chromadb");
+require('dotenv').config();
 
+
+const apiKey = process.env.OPEN_API_KEY;
 const embeddingFunction = new OpenAIEmbeddingFunction({
-    openai_api_key: "apiKey",
+    openai_api_key: apiKey,
     model: "text-embedding-3-small"
 })
 
 class EmbeddingsClient {
     constructor() {
         this.client = new ChromaClient();
+        this.initialize()
     }
 
+    async initialize() {
+        try {
+          this.client = new ChromaClient();
+          console.log("ChromaClient initialized successfully");
+        } catch (error) {
+          console.error("Error initializing ChromaClient:", error);
+        }
+    }
+
+    async ensureInitialized() {
+        if (!this.client) {
+          await this.initialize();
+        }
+      }
+
     async addDocuments(botName, documents) {
+        await this.ensureInitialized();
         try {
             const collectionName = `user_${botName}_documents`;
-            let collection = await this.client.getCollection({
-                name: collectionName
-            });
-            if (!collection) {
-                collection = await this.client.createCollection({
-                    name: collectionName,
-                    embeddingFunction: embeddingFunction,
-                });
-            }
-
+            const collection = await this.client.getOrCreateCollection({
+                name: collectionName,
+                embeddingFunction: embeddingFunction
+            })
+            console.log("collection created or gotten");
+            const resolved = await documents;
+            console.log(".....................................")
+            console.log(resolved);
+            console.log(".....................................")
+            console.log(documents)
+            console.log(".....................................")
+            const documentContents = resolved.map(doc => doc.pageContent);
             await collection.add({
-                documents: documents,
-                metadata: documents.map((chunk, idx) => ({
+                documents: documentContents,
+                metadata: resolved.map((chunk, idx) => ({
                     botName,
                     chunkId: idx
                 })),
-                ids: documents.map((_, idx) => `${botName}_${idx}`)
+                ids: resolved.map((_, idx) => `${botName}_${idx}`)
             });
-            console.log("Collection created");
+            console.log("added");
         } catch (error) {
             console.log("Error creating collection");
             throw error;
@@ -40,6 +62,7 @@ class EmbeddingsClient {
     }
 
     async deleteCollection(botName) {
+        await this.ensureInitialized();
         try {
             const collectionName = `user_${botName}_documents`;
             const collection = await this.client.getOrCreateCollection({name: collectionName});
@@ -53,25 +76,38 @@ class EmbeddingsClient {
 
     //query a collection
     async queryCollection(botName, searchText) {
+        await this.ensureInitialized();
         const collectionName = `user_${botName}_documents`;
+        console.log(collectionName);
         try {
+            console.log(1)
             // Retrieve the collection
             const collection = await this.client.getCollection({
                 name: collectionName,
                 embeddingFunction: embeddingFunction
             });
+            console.log(2)
             if (!collection) {
                 console.log(`Collection '${collectionName}' does not exist.`);
-                return;
+                return [];
             }
+            console.log(3)
+            console.log(searchText)
             // Example query to search for documents containing the searchText
             const queryResults = await collection.query({
-                filter: {document: {$contains: searchText}}, // Modify based on your query structure
-                limit: 10 // Limit the number of results returned
+                queryTexts: [searchText], // Modify based on your query structure
+                nResults: 10 // Limit the number of results returned
             });
+            console.log(4)
             console.log(`Query Results for '${searchText}':`, queryResults);
+            const formattedResults = {
+                documents: queryResults.documents[0] || [],
+                distances: queryResults.distances[0] || [],
+                metadatas: queryResults.metadatas[0] || []
+            };
+            return formattedResults;
         } catch (error) {
-            console.log('error');
+            console.log('error querying collection', error);
             throw error;
         }
     }

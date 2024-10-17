@@ -7,6 +7,7 @@ const botRoutes = (app) => {
     app.get('/user/bot/:botId', verifyToken, botController.getBot);
     app.delete('/user/bot/:botId', verifyToken, botController.deleteBot);
     app.put('/user/bot/:botId', verifyToken, botController.updateBot);
+    app.post('/user/bot/:botId/create-token', verifyToken, botController.generateBotAccessToken);
 }
 
 module.exports = botRoutes;

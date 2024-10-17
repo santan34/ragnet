@@ -117,8 +117,8 @@ class FileController {
         documents.push(newDoc);
         docList.push(file.path);
       }
-      //const docs = docsFromPDFs(docList);
-      //await embeddingClient.addDocuments(chatBot.botName, docs);
+      const docs = docsFromPDFs(docList);
+      await embeddingClient.addDocuments(chatBot.botName, docs);
       res.status(200).json({
         message: "Files uploaded successfully",
         files: documents,
@@ -138,6 +138,12 @@ class FileController {
       //handle jwt for the files
       //validation
       const { docId } = req.body;
+      if (!docId) {
+        res.status(400).json({
+          error: "File id is required",
+        });
+        return;
+      }
       const document = await Document.findById(docId);
       if (!document) {
         res.status(404).json({
@@ -261,6 +267,9 @@ class FileController {
       );
       console.log("panapa paita");
       await Document.findByIdAndDelete(docId);
+      //await embeddingClient.deleteCollection(chatBot.botName);
+      const newDocs = chatBot.botDocuments;
+      console.log(newDocs);
       res.status(200).json({
         message: "File deleted successfully",
       });
@@ -328,6 +337,9 @@ class FileController {
   static async getFileInformation(req, res) {
     //send information about a file
     const { docId } = req.body;
+    if (!docId) {
+      json.status({error : "File id is required"})
+    }
     try {
       const document = await Document.findById(docId);
       if (!document) {

@@ -1,11 +1,6 @@
 const mongoose = require('../utils/db');
 
 const conversationSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
   botId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Bot",

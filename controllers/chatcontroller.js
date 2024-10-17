@@ -1,17 +1,18 @@
 const Conversation = require("../models/conversations");
 const Message = require("../models/messages");
 const Bot = require("../models/bots");
+const sendMessage = require('../utils/chatFunctionality')
 
 class ChatController {
   static async initiateChat(req, res) {
-    const { userId, botId } = req.body;
+    const  botId = req.botId;
     //??
     try {
       const bot = await Bot.findById(botId);
       if (!bot) {
         return res.status(404).json({ error: "Bot not found" });
       }
-      const conversation = new Conversation({ userId, botId });
+      const conversation = new Conversation({ botId });
       await conversation.save();
       return res.status(200).json({ chatId: conversation._id, message: "Chat initiated successfully" });
     } catch (error) {
@@ -20,26 +21,65 @@ class ChatController {
   }
 
   static async sendMessage(req, res) {
-    const { chatId, message } = req.body;
+    //validate here
+    //chatid to send message
+    const botId = req.botId;
+    const { chatId}  = req.params;
+    const { message } = req.body;
+    if (!chatId) {
+      return res.status(400).json({ error: 'Chat ID is required' });
+    }
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message is required and must be a non-empty string' });
+    }
     try {
+      console.log("pppppppppppppppppppppppppp")
       const conversation = await Conversation.findById(chatId);
+      console.log(conversation)
       if (!conversation) {
         return res.status(404).json({ error: "Chat not found" });
       }
       const newMessage = new Message({ conversationId: chatId, sender: "user", message });
       await newMessage.save();
+      console.log(newMessage)
       // Here you would call your chatbot's response logic
-      const botResponse = "This is a placeholder response from the bot.";
-      const botMessage = new Message({ conversationId: chatId, sender: "bot", message: botResponse });
+      console.log()
+      const bot = await Bot.findById(botId);
+      if (!bot) {
+        return res.status(404).json({ error: "Bot not found" });
+      }
+      const result = await sendMessage(message, chatId, bot.botName);
+      if (result.status === 404 ) {
+        return res.status(404).json({
+          error: "chat information not found",
+        })
+      }
+
+      if (result.error){
+        return res.status(result.status || 500).json({ error: result.error })
+      }
+      const botMessageContent = result.chatResponse || result.message;
+      const botMessage = new Message({ conversationId: chatId,
+        sender: "bot",
+        message: botMessageContent
+      });
       await botMessage.save();
-      return res.status(200).json({ message, response: botResponse });
+      return res.status(200).json({
+        message, 
+        response: botMessageContent
+      });
     } catch (error) {
-      return res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ 
+        error: `Internal server error: ${error}`
+      });
     }
   }
 
   static async getChatHistory(req, res) {
-    const { chatId } = req.query;
+    const { chatId } = req.params;
+    if (!chatId) {
+      return res.status(400).json({ error: 'Chat ID is required' });
+    }
     try {
       const messages = await Message.find({ conversationId: chatId }).sort({ createdAt: 1 });
       return res.status(200).json({ messages });
@@ -49,7 +89,10 @@ class ChatController {
   }
 
   static async endChat(req, res) {
-    const { chatId } = req.body;
+    const { chatId } = req.params;
+    if (!chatId) {
+      return res.status(400).json({ error: 'Chat ID is required' });
+    }
     try {
       const conversation = await Conversation.findById(chatId);
       if (!conversation) {
@@ -63,7 +106,10 @@ class ChatController {
     }
   }
   static async getChatStatus(req, res) {
-    const { chatId } = req.query;
+    const { chatId } = req.params;
+    if (!chatId) {
+      return res.status(400).json({ error: 'Chat ID is required' });
+    }
     try {
       const conversation = await Conversation.findById(chatId);
       if (!conversation) {
@@ -76,7 +122,7 @@ class ChatController {
   }
 
   static async getBotInfo(req, res) {
-    const { botId } = req.query;
+    const { botId } = req.params;
     try {
       const bot = await Bot.findById(botId);
       if (!bot) {

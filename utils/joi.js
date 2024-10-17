@@ -42,4 +42,21 @@ const documentValidationSchema = joi.object({
     .required(),
 });
 
-module.exports = { userValidationSchema, botValidationSchema, documentValidationSchema };
+const botUpdateValidationSchema = joi.object({
+  name: joi
+    .string()
+    .min(2)
+    .max(50)
+    .required(),
+
+  description: joi
+    .string()
+    .min(5)
+    .max(200)
+    .required(),
+});
+
+
+
+
+module.exports = { userValidationSchema, botValidationSchema, documentValidationSchema, botUpdateValidationSchema };
