@@ -8,356 +8,293 @@ const docsFromPDFs = require("../services/pdfLoader");
 const embeddingClient = require("../utils/chroma");
 
 class FileController {
-  //uploads a file from local storage
+  /**
+   * Uploads a single file and associates it with a bot
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {string} req.params.botId - ID of the bot to associate the file with
+   * @param {Object} req.file - Uploaded file object from multer
+   * @returns {Promise<void>}
+   */
   static async uploadFile(req, res) {
     const { botId } = req.params;
-    //validate these
-    const { fileName } = req.body
+    const { fileName } = req.body;
+
+    // Input validation
     if (!botId) {
-      res.status(400).json({
-        error: "Bot id is required",
-      });
-      return;
+      return res.status(400).json({ error: "Bot id is required" });
     }
+
     if (!req.file) {
-      res.status(400).json({
-        error: "No file uploaded",
-      });
-      return;
+      return res.status(400).json({ error: "No file uploaded" });
     }
-    //validate that only pdf files are uploaded
     const fileDetails = {
       documentName: req.file.originalname,
       type: req.file.mimetype,
       size: req.file.size,
       createdAt: new Date(),
-      //play with the path to get the right path
       path: req.file.path,
     };
+
     try {
+      // Create and save new document
       const newDoc = new Document(fileDetails);
       await newDoc.save();
-      console.log(newDoc)
-      console.log(",,,,,,,,,,,,,,,,,,,,,,")
+
+      // Find and update bot with new document
       const chatBot = await Bot.findById(botId);
-      console.log(chatBot);
       if (!chatBot) {
-        res.status(404).json({
-          error: "Bot not found",
-        });
-        return;
+        return res.status(404).json({ error: "Bot not found" });
       }
+
       chatBot.botDocuments.push(newDoc._id);
-      console.log(".........after pushing..............");
-      console.log(chatBot);
-      //const docList = [];
-      //docList.push(req.file.path);
-      //const docs = docsFromPDFs(docList);
-      //create embbedings
-      //await embeddingClient.addDocuments(chatBot.botName, docs)
       await chatBot.save();
-      console.log("000000....the bot...........")
-      console.log(chatBot)
-      res.status(200).json({
+      return res.status(200).json({
         message: "File uploaded successfully",
         file: newDoc,
       });
-      return;
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         error: `Internal server error: ${error}`,
       });
-      return;
     }
-    //maybe save the file details in a database,
-    //map the file details to the file
-    //files are stored in folder name of the bot
-
-    //HANDLE SINgle file upload
   }
 
-  //uploads multiple files from local storage
+  /**
+   * Uploads multiple files and associates them with a bot
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {string} req.params.botId - ID of the bot to associate files with
+   * @param {Array} req.files - Array of uploaded file objects from multer
+   * @returns {Promise<void>}
+   */
   static async uploadMultipleFiles(req, res) {
-    //multiple file upload
     const { botId } = req.params;
+
+    // Input validation
     if (!botId) {
-      return res.status(400).json({
-        error: "Bot id is required",
-      });
+      return res.status(400).json({ error: "Bot id is required" });
     }
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({
-        error: "No files uploaded",
-      });
+
+    if (!req.files?.length) {
+      return res.status(400).json({ error: "No files uploaded" });
     }
 
     try {
       const chatBot = await Bot.findById(botId);
       if (!chatBot) {
-        res.status(404).json({
-          error: "Bot not found",
-        });
-        return;
+        return res.status(404).json({ error: "Bot not found" });
       }
+
       const documents = [];
-      const docList = []
+      const docList = [];
+
+      // Process each file
       for (const file of req.files) {
         const fileDetails = {
           documentName: file.originalname,
           type: file.mimetype,
           size: file.size,
           createdAt: new Date(),
-          //play with the path to get the right path
           path: file.path,
         };
+
         const newDoc = new Document(fileDetails);
         await newDoc.save();
+        
         chatBot.botDocuments.push(newDoc._id);
-        await chatBot.save();
         documents.push(newDoc);
         docList.push(file.path);
       }
+
+      await chatBot.save();
+
+      // Create embeddings for all documents
       const docs = docsFromPDFs(docList);
       await embeddingClient.addDocuments(chatBot.botName, docs);
-      res.status(200).json({
+
+      return res.status(200).json({
         message: "Files uploaded successfully",
         files: documents,
       });
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         error: `Internal server error: ${error}`,
       });
-      return;
     }
   }
 
-  //downloads a file from the server
+  /**
+   * Downloads a single file from the server
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {string} req.body.docId - ID of the document to download
+   * @returns {Promise<void>}
+   */
   static async downloadFile(req, res) {
-    //download file
     try {
-      //handle jwt for the files
-      //validation
       const { docId } = req.body;
+      
       if (!docId) {
-        res.status(400).json({
-          error: "File id is required",
-        });
-        return;
+        return res.status(400).json({ error: "File id is required" });
       }
+
       const document = await Document.findById(docId);
       if (!document) {
-        res.status(404).json({
-          error: "File not found",
-        });
-        return;
+        return res.status(404).json({ error: "File not found" });
       }
-      const filepath = path.join(__dirname,'..', document.path);
-      console.log(filepath);
+
+      // Verify file exists on server
+      const filepath = path.join(__dirname, '..', document.path);
       if (!fs.existsSync(filepath)) {
-        res.status(404).json({
-          error: "File not found on server",
-        });
-        return;
+        return res.status(404).json({ error: "File not found on server" });
       }
+
+      // Set download headers and initiate download
       res.setHeader(
         "Content-Disposition",
         `attachment; filename=${document.name}`
       );
-      res.download(document.path, document.name);
-      res.status(200).json({
-        message: "File downloading successfully",
-      });
-      return;
+      
+      return res.download(document.path, document.name);
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         error: `Internal server error: ${error}`,
       });
-      return;
     }
   }
 
-  //downloads multiple files from the server
+  /**
+   * Downloads multiple files as a zip archive
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Array<string>} req.body.docIds - Array of document IDs to download
+   * @returns {Promise<void>}
+   */
   static async downloadFiles(req, res) {
-    //download multiple files
     const { docIds } = req.body;
-    if (!docIds || docIds.length === 0) {
-      res.status(400).json({
-        error: "No files selected",
-      });
-      return;
+
+    if (!docIds?.length) {
+      return res.status(400).json({ error: "No files selected" });
     }
+
     try {
       const documents = await Document.find({ _id: { $in: docIds } });
-      if (documents.length === 0) {
-        res.status(404).json({
-          error: "Files not found",
-        });
-        return;
+      if (!documents.length) {
+        return res.status(404).json({ error: "Files not found" });
       }
+
+      // Create zip archive
       const zip = new NodeZip();
-      const validDocuments = [];
-      documents.forEach(async (document) => {
+      
+      // Add existing files to zip and clean up missing files
+      for (const document of documents) {
         const filepath = path.join(__dirname, document.path);
         if (!fs.existsSync(filepath)) {
           await Document.findByIdAndDelete(document._id);
         } else {
           zip.file(document.name, fs.readFileSync(filepath));
         }
-      });
+      }
+
+      // Generate and send zip file
       const data = zip.generate({ base64: false, compression: "DEFLATE" });
-      res.setHeader("Content-Disposition", `attachment; filename=files.zip`);
+      res.setHeader("Content-Disposition", "attachment; filename=files.zip");
       res.setHeader("Content-Type", "application/zip");
-      res.send(Buffer.from(data, "binary"));
-      res.status(200).json({
-        message: "Files downloading successfully",
-      });
-      return;
+      
+      return res.send(Buffer.from(data, "binary"));
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         error: `Internal server error: ${error}`,
       });
-      return;
     }
   }
 
-  //deletes a file from the server
+  /**
+   * Deletes a single file and its associated references
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {string} req.params.botId - ID of the bot owning the file
+   * @param {string} req.body.docId - ID of the document to delete
+   * @returns {Promise<void>}
+   */
   static async deleteFile(req, res) {
-    //delete a file
     const { botId } = req.params;
-    if (!botId) {
-      res.status(400).json({
-        error: "Bot id is required",
-      });
-      return;
-    }
     const { docId } = req.body;
-    if (!docId) {
-      res.status(400).json({
-        error: "File id is required",
+
+    // Input validation
+    if (!botId || !docId) {
+      return res.status(400).json({
+        error: !botId ? "Bot id is required" : "File id is required",
       });
-      return;
     }
+
     try {
-      const document = await Document.findById(docId);
-      const chatBot = await Bot.findById(botId);
-      if (!chatBot) {
-        res.status(404).json({
-          error: "Bot not found",
+      // Parallel fetch of document and bot
+      const [document, chatBot] = await Promise.all([
+        Document.findById(docId),
+        Bot.findById(botId)
+      ]);
+
+      if (!chatBot || !document) {
+        return res.status(404).json({
+          error: !chatBot ? "Bot not found" : "File not found",
         });
-        return;
       }
-      if (!document) {
-        res.status(404).json({
-          error: "File not found",
-        });
-        return;
-      }
+
+      // Check file existence and delete if found
       const filepath = path.join(__dirname, '..', document.path);
-      console.log(filepath);
       if (!fs.existsSync(filepath)) {
         await Document.findByIdAndDelete(docId);
-        res.status(404).json({
-          error: "File not found on server",
-        });
-        return;
+        return res.status(404).json({ error: "File not found on server" });
       }
+
+      // Delete file and update references
       fs.unlinkSync(filepath);
       chatBot.botDocuments = chatBot.botDocuments.filter(
         (doc) => doc.toString() !== docId
       );
-      console.log("panapa paita");
-      await Document.findByIdAndDelete(docId);
-      //await embeddingClient.deleteCollection(chatBot.botName);
-      const newDocs = chatBot.botDocuments;
-      console.log(newDocs);
-      res.status(200).json({
-        message: "File deleted successfully",
-      });
-      return;
+      await Promise.all([
+        Document.findByIdAndDelete(docId),
+        chatBot.save()
+      ]);
+
+      return res.status(200).json({ message: "File deleted successfully" });
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         error: `Internal server error: ${error}`,
       });
-      return;
     }
   }
 
-  //deletes multiple files from the server
-  static async deleteFiles(req, res) {
-    //delete multiple files
-    const { botId } = req.params;
-    if (!botId) {
-      res.status(400).json({
-        error: "Bot id is required",
-      });
-      return;
-    }
-    const { docIds } = req.body;
-    if (!docIds || docIds.length === 0) {
-      res.status(400).json({
-        error: "No files selected",
-      });
-      return;
-    }
-    try {
-      const chatBot = await Bot.findById(botId);
-      const documents = await Document.find({ _id: { $in: docIds } });
-      if (documents.length === 0) {
-        res.status(404).json({
-          error: "Files not found",
-        });
-        return;
-      }
-      documents.forEach(async (document) => {
-        const filepath = path.join(__dirname, document.path);
-        if (!fs.existsSync(filepath)) {
-          await Document.findByIdAndDelete(document._id);
-        } else {
-          fs.unlinkSync(filepath);
-          chatBot.documents = chatBot.documents.filter(
-            (doc) => doc.toString() !== document._id
-          );
-          await Document.findByIdAndDelete(document._id);
-        }
-      });
-      await embeddingClient.deleteCollection(chatBot.botName);
-      res.status(200).json({
-        message: "Files deleted successfully",
-      });
-      return;
-    } catch (error) {
-      res.status(500).json({
-        error: `Internal server error: ${error}`,
-      });
-      return;
-    }
-  }
-
-  //get information about a file from the server
+  /**
+   * Retrieves information about a specific file
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {string} req.body.docId - ID of the document to get information about
+   * @returns {Promise<void>}
+   */
   static async getFileInformation(req, res) {
-    //send information about a file
     const { docId } = req.body;
+
     if (!docId) {
-      json.status({error : "File id is required"})
+      return res.status(400).json({ error: "File id is required" });
     }
+
     try {
       const document = await Document.findById(docId);
       if (!document) {
-        res.status(404).json({
-          error: "File not found",
-        });
-        return;
+        return res.status(404).json({ error: "File not found" });
       }
-      res.status(200).json({
-        message: "File information sent successfully",
+
+      return res.status(200).json({
+        message: "File information retrieved successfully",
         file: document,
       });
-      return;
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         error: `Internal server error: ${error}`,
       });
-      return;
     }
   }
 }

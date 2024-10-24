@@ -1,159 +1,170 @@
 const { botValidationSchema, requestBodyValidationSchema } = require("../utils/joi");
 const Bot = require("../models/bots");
 const User = require("../models/users");
-const Document = require("../models/documents");
 const jwt = require("jsonwebtoken");
 
-//creates a jwt token based of the userId
-const secret = process.env.JWT_SECRET_2 || "getishjdtrerfghuytfdcfv-i dighggytr";
-const time = process.env.JWT_LIFESPAN || "24000h";
+// Environment configuration with defaults
+const JWT_CONFIG = {
+  secret: process.env.JWT_SECRET_2 || "getishjdtrerfghuytfdcfv-i dighggytr", 
+  expiresIn: process.env.JWT_LIFESPAN || "24000h"
+};
+
+
+/**
+ * Creates a JWT token for bot authentication
+ * @param {string} botId - The ID of the bot
+ * @returns {string} JWT token
+ */
 const createToken = (botId) => {
-  return jwt.sign({ botId }, secret, {
-    expiresIn: time,
-  });
+  return jwt.sign({ botId }, JWT_CONFIG.secret, { expiresIn: JWT_CONFIG.expiresIn });
 };
 
 
 class BotController {
+  /**
+   * Creates a new bot for a user
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
   static async createBot(req, res) {
     const { name, description } = req.body;
     const userId = req.userId;
-    //validate everything
-    const toValidate = { name, description };
-    const { error } = botValidationSchema.validate(toValidate);
-    if (error) {
-      return res.status(400).json({
-        error: error.details[0].message,
-      });
-    }
+
+    // Validate input
     try {
-      const user = await User.findById(userId).populate("bots");
-      const existingBot = user.bots.find((bot) => {
-        console.log(`Comparing bot name: ${bot.botName} with name: ${name}`);
-        return bot.botName === name;
-      });
-      if (existingBot) {
-        return res.status(400).json({
-          error: "Bot with the same name already exists",
-        });
+      const { error } = botValidationSchema.validate({ name, description });
+      if (error) {
+        return res.status(400).json({ error: error.details[0].message });
       }
-      const botDetails = {
+      const user = await User.findById(userId).populate("bots");
+      const existingBot = user.bots.find(bot => bot.botName === name);
+      if (existingBot) {
+        return res.status(400).json({ error: "Bot with the same name already exists" });
+      }
+
+      // Create and save new bot
+      const newBot = new Bot({
         botName: name,
         botDescription: description,
-        createdAt: new Date(),
-      };
-      const newBot = new Bot(botDetails);
+        createdAt: new Date()
+      });
       const savedBot = await newBot.save();
       user.bots.push(savedBot._id);
       await user.save();
+
       return res.status(200).json({
         message: "Bot created successfully",
         bot: savedBot,
-        user: user
+        user
       });
     } catch (error) {
-      return res.status(500).json({
-        error: `Internal server error: ${error}`,
-      });
+      return res.status(500).json({ error: `Internal server error: ${error.message}` });
     }
   }
 
+
+  /**
+   * Deletes a bot and removes it from user's bot list
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
   static async deleteBot(req, res) {
+    const { botId } = req.params;
+    const userId = req.userId;
+
+    if (!botId) {
+      return res.status(400).json({ error: "Bot ID is required" });
+    }
+
     try {
-      const userId = req.userId;
-      const { botId } = req.params;
-      if (!botId) {
-        return res.status(400).json({
-          error: "Bot id is required",
-        });
-      }
-      //validation
-      // Find the user
       const user = await User.findById(userId);
       if (!user) {
-        return res.status(404).json({
-          error: "User does not have access to this bot",
-        });
+        return res.status(404).json({ error: "User not found" });
       }
 
-      // Check if the bot exists in the user's bots array
       const botIndex = user.bots.indexOf(botId);
       if (botIndex === -1) {
-        return res.status(404).json({
-          error: "Bot not found",
-        });
+        return res.status(404).json({ error: "Bot not found in user's collection" });
       }
 
-      // Remove the bot from the user's bots array
+      // Remove bot from user's collection and delete it
       user.bots.splice(botIndex, 1);
-      await user.save();
+      await Promise.all([
+        user.save(),
+        Bot.findByIdAndDelete(botId)
+      ]);
 
-      // Delete the bot from the database
-      await Bot.findByIdAndDelete(botId);
-      return res.status(200).json({
-        message: "Bot deleted successfully",
-      });
+      return res.status(200).json({ message: "Bot deleted successfully" });
     } catch (error) {
-      return res.status(500).json({
-        error: `Internal server error: ${error}`,
-      });
+      return res.status(500).json({ error: `Internal server error: ${error.message}` });
     }
   }
 
+
+  /**
+   * Retrieves a specific bot's details
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
   static async getBot(req, res) {
+    const { botId } = req.params;
+    const userId = req.userId;
+
+    if (!botId) {
+      return res.status(400).json({ error: "Bot ID is required" });
+    }
+
     try {
-      const { botId } = req.params;
-      const userId = req.userId;
-      //add validation
-      //include length of mongoose id
-      if (!botId) {
-        return res.status(400).json({
-          error: "Bot id is required",
-        });
-      }
       const user = await User.findById(userId);
       if (!user) {
-        return res.status(404).json({
-          error: "User does not have acces to this bot",
-        });
+        return res.status(404).json({ error: "User not found" });
       }
+
       const bot = await Bot.findById(botId);
       if (!bot) {
         return res.status(404).json({ error: "Bot not found" });
       }
+
       return res.status(200).json(bot);
     } catch (error) {
-      return res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error.message}` });
     }
   }
-  
-  //is faulty
+
+
+  /**
+   * Updates bot details
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
   static async updateBot(req, res) {
+    const { botId } = req.params;
+    const userId = req.userId;
+    const { name, description } = req.body;
+
+    if (!botId) {
+      return res.status(400).json({ error: "Bot ID is required" });
+    }
+
     try {
-      const { botId } = req.params;
-      const userId = req.userId;
-      const { name, description } = req.body;
-      //validate
-      if(!botId) {
-        return res.status(400).json({
-          error: "Bot id is required",
-        });
-      }
+      // Validate request body
       const { error } = requestBodyValidationSchema.validate(req.body);
       if (error) {
         return res.status(400).json({ error: error.details[0].message });
       }
+
+      // Verify user exists and has access
       const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({
-          error: "User does not have acces to this bot",
-        });
+      if (!user || !user.bots.includes(botId)) {
+        return res.status(404).json({ error: "User not found or doesn't have access to this bot" });
       }
-  
+
+      // Update bot
       const bot = await Bot.findByIdAndUpdate(
         botId,
-        { botName: name,
-          botDescription: description
+        { 
+          botName: name,
+          botDescription: description 
         },
         { new: true }
       );
@@ -164,49 +175,45 @@ class BotController {
 
       return res.status(200).json(bot);
     } catch (error) {
-      return res.status(500).json({ error: `Internal server error: ${error}` });
+      return res.status(500).json({ error: `Internal server error: ${error.message}` });
     }
   }
 
+  
+  /**
+   * Generates an access token for a bot
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
   static async generateBotAccessToken(req, res) {
+    const { botId } = req.params;
+    const userId = req.userId;
+
+    if (!botId) {
+      return res.status(400).json({ error: "Bot ID is required" });
+    }
+
     try {
-      const { botId } = req.params;
-      const userId = req.userId;
-      if (!botId) {
-        return res.status(400).json({
-          error: "Bot id is required",
-        });
-      }
-      // Validate user access to the bot
       const user = await User.findById(userId);
       if (!user) {
-        return res.status(404).json({
-          error: "User not found",
-        });
+        return res.status(404).json({ error: "User not found" });
       }
 
-      // Check if the bot exists and belongs to the user
+      // Verify bot exists and belongs to user
       const bot = await Bot.findById(botId);
       if (!bot || !user.bots.includes(botId)) {
-        return res.status(404).json({
-          error: "Bot not found or user does not have access to this bot",
-        });
+        return res.status(404).json({ error: "Bot not found or user doesn't have access" });
       }
 
-      // Generate the token
       const token = createToken(botId);
-
-      // Optionally, you can save the token to the bot document
 
       return res.status(200).json({
         message: "Bot access token generated successfully",
-        token: token,
-        botId: botId
+        token,
+        botId
       });
     } catch (error) {
-      return res.status(500).json({
-        error: `Internal server error: ${error}`,
-      });
+      return res.status(500).json({ error: `Internal server error: ${error.message}` });
     }
   }
 }
