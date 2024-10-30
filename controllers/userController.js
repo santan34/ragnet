@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 
 //creates a jwt token based of the userId
 const secret = process.env.JWT_SECRET || 'getishjdty-uc565gtduf-fv';
-const time = process.env.JWT_LIFESPAN || '1h';
+const time = process.env.JWT_LIFESPAN || '3h';
 const createToken = (userId) => {
   return jwt.sign({ userId }, secret, {
     expiresIn: time,

@@ -6,6 +6,7 @@ const Bot = require('../models/bots');
 const User = require('../models/users');
 const Document = require('../models/documents');
 const jwt = require('jsonwebtoken');
+const redisClient = require('../utils/redisClient');
 
 //creates a jwt token based of the userId
 const secret =
@@ -208,6 +209,41 @@ class BotController {
         message: 'Bot access token generated successfully',
         token: token,
         botId: botId,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: `Internal server error: ${error}`,
+      });
+    }
+  }
+
+  // Method to blacklist a token
+  static async blacklistToken(req, res) {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        error: 'Token is required',
+      });
+    }
+
+    try {
+      // Add the token to the Redis blacklist with an expiry time
+      const expiry = 24 * 60 * 60 * 60;
+      const success = await redisClient.setValue(
+        `blacklist_${token}`,
+        'blacklisted',
+        expiry
+      );
+
+      if (!success) {
+        return res.status(500).json({
+          error: 'Failed to blacklist token',
+        });
+      }
+
+      return res.status(200).json({
+        message: 'Token blacklisted successfully',
       });
     } catch (error) {
       return res.status(500).json({
