@@ -1,8 +1,8 @@
-const express = require("express");
+const express = require('express');
 const app = express();
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
-const botRoutes =  require('./routes/botRoutes');
+const botRoutes = require('./routes/botRoutes');
 const fileRoutes = require('./routes/fileRoutes');
 
 app.use(express.json());
@@ -13,7 +13,6 @@ botRoutes(app);
 fileRoutes(app);
 
 const port = 3000 || process.env.PORT;
-
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

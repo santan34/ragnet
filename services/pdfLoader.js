@@ -1,6 +1,7 @@
-const  { PDFLoader } = require('@langchain/community/document_loaders/fs/pdf');
+const { PDFLoader } = require('@langchain/community/document_loaders/fs/pdf');
 const { CharacterTextSplitter } = require('langchain/text_splitter');
 
+// Function to extract documents from PDFs
 const docsFromPDFs = async (paths_to_pdfs) => {
   const splitter = new CharacterTextSplitter({
     separator: '. ',

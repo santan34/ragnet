@@ -1,22 +1,23 @@
-const res = require("express/lib/response");
-const multer = require("multer");
+const res = require('express/lib/response');
+const multer = require('multer');
 
 const storage = multer.diskStorage({
-  //check if file is a pdf
+  //prepare the destination for the file
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + '-' + file.originalname);
   },
 });
 
+//filter the file type for pdf
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === "application/pdf") {
+  if (file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
-    cb(new Error("Only pdf files are allowed"), false);
+    cb(new Error('Only pdf files are allowed'), false);
   }
 };
 
@@ -25,4 +26,4 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
- module.exports = upload;
+module.exports = upload;

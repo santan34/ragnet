@@ -35,5 +35,8 @@
     "openai": "^4.67.3",
     "pdf-parse": "^1.1.1",
     "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^10.8.1"
   }
 }

@@ -1,54 +1,50 @@
-const fs = require("fs");
-const path = require("path");
-const Document = require("../models/documents");
-const Bot = require("../models/bots");
-const { documentValidationSchema } = require("../utils/joi");
-const NodeZip = require("node-zip");
-const docsFromPDFs = require("../services/pdfLoader");
-const embeddingClient = require("../utils/chroma");
+const fs = require('fs');
+const path = require('path');
+const Document = require('../models/documents');
+const Bot = require('../models/bots');
+const { documentValidationSchema } = require('../utils/joi');
+const NodeZip = require('node-zip');
+const docsFromPDFs = require('../services/pdfLoader');
+const embeddingClient = require('../utils/chroma');
 
+//File controller
 class FileController {
   //uploads a file from local storage
   static async uploadFile(req, res) {
     const { botId } = req.params;
-    //validate these
-    const { fileName } = req.body
+    const { fileName } = req.body;
     if (!botId) {
       res.status(400).json({
-        error: "Bot id is required",
+        error: 'Bot id is required',
       });
       return;
     }
     if (!req.file) {
       res.status(400).json({
-        error: "No file uploaded",
+        error: 'No file uploaded',
       });
       return;
     }
-    //validate that only pdf files are uploaded
     const fileDetails = {
       documentName: req.file.originalname,
       type: req.file.mimetype,
       size: req.file.size,
       createdAt: new Date(),
-      //play with the path to get the right path
       path: req.file.path,
     };
     try {
       const newDoc = new Document(fileDetails);
       await newDoc.save();
-      console.log(newDoc)
-      console.log(",,,,,,,,,,,,,,,,,,,,,,")
+      console.log(newDoc);
       const chatBot = await Bot.findById(botId);
       console.log(chatBot);
       if (!chatBot) {
         res.status(404).json({
-          error: "Bot not found",
+          error: 'Bot not found',
         });
         return;
       }
       chatBot.botDocuments.push(newDoc._id);
-      console.log(".........after pushing..............");
       console.log(chatBot);
       //const docList = [];
       //docList.push(req.file.path);
@@ -56,10 +52,10 @@ class FileController {
       //create embbedings
       //await embeddingClient.addDocuments(chatBot.botName, docs)
       await chatBot.save();
-      console.log("000000....the bot...........")
-      console.log(chatBot)
+      console.log('000000....the bot...........');
+      console.log(chatBot);
       res.status(200).json({
-        message: "File uploaded successfully",
+        message: 'File uploaded successfully',
         file: newDoc,
       });
       return;
@@ -69,11 +65,6 @@ class FileController {
       });
       return;
     }
-    //maybe save the file details in a database,
-    //map the file details to the file
-    //files are stored in folder name of the bot
-
-    //HANDLE SINgle file upload
   }
 
   //uploads multiple files from local storage
@@ -82,12 +73,12 @@ class FileController {
     const { botId } = req.params;
     if (!botId) {
       return res.status(400).json({
-        error: "Bot id is required",
+        error: 'Bot id is required',
       });
     }
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
-        error: "No files uploaded",
+        error: 'No files uploaded',
       });
     }
 
@@ -95,12 +86,12 @@ class FileController {
       const chatBot = await Bot.findById(botId);
       if (!chatBot) {
         res.status(404).json({
-          error: "Bot not found",
+          error: 'Bot not found',
         });
         return;
       }
       const documents = [];
-      const docList = []
+      const docList = [];
       for (const file of req.files) {
         const fileDetails = {
           documentName: file.originalname,
@@ -120,7 +111,7 @@ class FileController {
       const docs = docsFromPDFs(docList);
       await embeddingClient.addDocuments(chatBot.botName, docs);
       res.status(200).json({
-        message: "Files uploaded successfully",
+        message: 'Files uploaded successfully',
         files: documents,
       });
     } catch (error) {
@@ -135,37 +126,35 @@ class FileController {
   static async downloadFile(req, res) {
     //download file
     try {
-      //handle jwt for the files
-      //validation
       const { docId } = req.body;
       if (!docId) {
         res.status(400).json({
-          error: "File id is required",
+          error: 'File id is required',
         });
         return;
       }
       const document = await Document.findById(docId);
       if (!document) {
         res.status(404).json({
-          error: "File not found",
+          error: 'File not found',
         });
         return;
       }
-      const filepath = path.join(__dirname,'..', document.path);
+      const filepath = path.join(__dirname, '..', document.path);
       console.log(filepath);
       if (!fs.existsSync(filepath)) {
         res.status(404).json({
-          error: "File not found on server",
+          error: 'File not found on server',
         });
         return;
       }
       res.setHeader(
-        "Content-Disposition",
+        'Content-Disposition',
         `attachment; filename=${document.name}`
       );
       res.download(document.path, document.name);
       res.status(200).json({
-        message: "File downloading successfully",
+        message: 'File downloading successfully',
       });
       return;
     } catch (error) {
@@ -182,7 +171,7 @@ class FileController {
     const { docIds } = req.body;
     if (!docIds || docIds.length === 0) {
       res.status(400).json({
-        error: "No files selected",
+        error: 'No files selected',
       });
       return;
     }
@@ -190,7 +179,7 @@ class FileController {
       const documents = await Document.find({ _id: { $in: docIds } });
       if (documents.length === 0) {
         res.status(404).json({
-          error: "Files not found",
+          error: 'Files not found',
         });
         return;
       }
@@ -204,12 +193,12 @@ class FileController {
           zip.file(document.name, fs.readFileSync(filepath));
         }
       });
-      const data = zip.generate({ base64: false, compression: "DEFLATE" });
-      res.setHeader("Content-Disposition", `attachment; filename=files.zip`);
-      res.setHeader("Content-Type", "application/zip");
-      res.send(Buffer.from(data, "binary"));
+      const data = zip.generate({ base64: false, compression: 'DEFLATE' });
+      res.setHeader('Content-Disposition', `attachment; filename=files.zip`);
+      res.setHeader('Content-Type', 'application/zip');
+      res.send(Buffer.from(data, 'binary'));
       res.status(200).json({
-        message: "Files downloading successfully",
+        message: 'Files downloading successfully',
       });
       return;
     } catch (error) {
@@ -226,14 +215,14 @@ class FileController {
     const { botId } = req.params;
     if (!botId) {
       res.status(400).json({
-        error: "Bot id is required",
+        error: 'Bot id is required',
       });
       return;
     }
     const { docId } = req.body;
     if (!docId) {
       res.status(400).json({
-        error: "File id is required",
+        error: 'File id is required',
       });
       return;
     }
@@ -242,13 +231,13 @@ class FileController {
       const chatBot = await Bot.findById(botId);
       if (!chatBot) {
         res.status(404).json({
-          error: "Bot not found",
+          error: 'Bot not found',
         });
         return;
       }
       if (!document) {
         res.status(404).json({
-          error: "File not found",
+          error: 'File not found',
         });
         return;
       }
@@ -257,7 +246,7 @@ class FileController {
       if (!fs.existsSync(filepath)) {
         await Document.findByIdAndDelete(docId);
         res.status(404).json({
-          error: "File not found on server",
+          error: 'File not found on server',
         });
         return;
       }
@@ -265,13 +254,13 @@ class FileController {
       chatBot.botDocuments = chatBot.botDocuments.filter(
         (doc) => doc.toString() !== docId
       );
-      console.log("panapa paita");
+      console.log('panapa paita');
       await Document.findByIdAndDelete(docId);
       //await embeddingClient.deleteCollection(chatBot.botName);
       const newDocs = chatBot.botDocuments;
       console.log(newDocs);
       res.status(200).json({
-        message: "File deleted successfully",
+        message: 'File deleted successfully',
       });
       return;
     } catch (error) {
@@ -288,14 +277,14 @@ class FileController {
     const { botId } = req.params;
     if (!botId) {
       res.status(400).json({
-        error: "Bot id is required",
+        error: 'Bot id is required',
       });
       return;
     }
     const { docIds } = req.body;
     if (!docIds || docIds.length === 0) {
       res.status(400).json({
-        error: "No files selected",
+        error: 'No files selected',
       });
       return;
     }
@@ -304,7 +293,7 @@ class FileController {
       const documents = await Document.find({ _id: { $in: docIds } });
       if (documents.length === 0) {
         res.status(404).json({
-          error: "Files not found",
+          error: 'Files not found',
         });
         return;
       }
@@ -322,7 +311,7 @@ class FileController {
       });
       await embeddingClient.deleteCollection(chatBot.botName);
       res.status(200).json({
-        message: "Files deleted successfully",
+        message: 'Files deleted successfully',
       });
       return;
     } catch (error) {
@@ -338,18 +327,18 @@ class FileController {
     //send information about a file
     const { docId } = req.body;
     if (!docId) {
-      json.status({error : "File id is required"})
+      json.status({ error: 'File id is required' });
     }
     try {
       const document = await Document.findById(docId);
       if (!document) {
         res.status(404).json({
-          error: "File not found",
+          error: 'File not found',
         });
         return;
       }
       res.status(200).json({
-        message: "File information sent successfully",
+        message: 'File information sent successfully',
         file: document,
       });
       return;
